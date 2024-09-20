@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>HTTP Stream Story</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap"
+    rel="stylesheet">
+  <style>
+      body {
+          font-family: "Literata", system-ui;
+          font-optical-sizing: auto;
+          font-style: normal;
+          padding: 1.5rem;
+          color: #333;
+      }
+
+      #story {
+          background-color: #f5f5dc;
+          font-size: 1.2rem;
+          line-height: 1.6;
+          padding: 1rem;
+          white-space: pre-wrap;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
+          hyphens: auto;
+          border-radius: 10px;
+          max-width: 1000px;
+          margin: auto;
+      }
+  </style>
+</head>
+<body>
+
+<article id="story">Loading...</article>
+
+<script>
+  function debounce(func, wait, immediate) {
+    let timeout;
+    return function() {
+      const context = this, args = arguments;
+      const later = function() {
+        timeout = null;
+        if (!immediate) func.apply(context, args);
+      };
+      const callNow = immediate && !timeout;
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+      if (callNow) func.apply(context, args);
+    };
+  }
+
+  const scrollToBottom = () => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: 'smooth'
+    });
+  };
+
+  const storyContainer = document.querySelector('#story');
+  (async () => {
+    const res = await fetch('/story');
+    const stream = res.body.pipeThrough(new TextDecoderStream());
+    const reader = stream.getReader();
+    let text = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += value;
+      storyContainer.innerText = text;
+      debounce(scrollToBottom, 500)();
+    }
+  })();
+</script>
+</body>
+</html>
